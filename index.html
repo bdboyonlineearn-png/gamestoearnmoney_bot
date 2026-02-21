@@ -1,104 +1,124 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lucky Spin Rewards</title>
 
 <style>
-body{margin:0;font-family:system-ui;background:#020617;color:#fff;text-align:center}
-.card{max-width:420px;margin:20px auto;background:#0f172a;padding:20px;border-radius:20px}
-.btn{width:100%;padding:16px;margin-top:10px;border:none;border-radius:12px;
-background:linear-gradient(45deg,#22c55e,#16a34a);color:#fff;font-size:16px}
-.btn:disabled{background:#475569}
-#wheelBox{position:relative}
-#wheel{
- width:200px;height:200px;border-radius:50%;
- background:conic-gradient(#22c55e,#4ade80,#16a34a,#22c55e);
- margin:20px auto;border:6px solid #020617;
- transition:transform 2s ease-out
+body{margin:0;font-family:sans-serif;background:#020617;color:#fff;text-align:center}
+h2{margin:10px}
+.card{background:#0f172a;padding:15px;border-radius:16px;margin:10px}
+.btn{width:90%;padding:14px;margin:6px;border:none;border-radius:12px;
+font-size:15px;color:#fff;background:linear-gradient(45deg,#22c55e,#16a34a)}
+.btn:disabled{background:#334155}
+
+.wheel-box{position:relative;width:220px;height:220px;margin:15px auto}
+.wheel{
+ width:100%;height:100%;border-radius:50%;
+ background:conic-gradient(
+ #22c55e 0deg 60deg,
+ #4ade80 60deg 120deg,
+ #16a34a 120deg 180deg,
+ #22c55e 180deg 240deg,
+ #4ade80 240deg 300deg,
+ #16a34a 300deg 360deg);
+ border:8px solid #020617;
+ transition:transform 3s cubic-bezier(.17,.67,.25,1);
 }
-.pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:24px;color:gold}
-.spin{transform:rotate(1080deg)}
-.popup{
- display:none;position:fixed;bottom:20px;left:10%;width:80%;
- background:#16a34a;padding:12px;border-radius:14px;z-index:99
+.pointer{
+ position:absolute;top:-14px;left:50%;
+ transform:translateX(-50%);
+ font-size:26px;color:gold
 }
+
+.list{list-style:none;padding:0}
+.list li{background:#020617;margin:6px;padding:10px;border-radius:10px}
+
 #overlay{
- display:none;position:fixed;inset:0;background:#000;
- z-index:9999;color:#fff;align-items:center;justify-content:center;
- flex-direction:column
-}
+display:none;position:fixed;inset:0;background:#000;
+color:#fff;z-index:9999;
+align-items:center;justify-content:center;flex-direction:column}
+
 </style>
 </head>
 
 <body>
 
-<div class="card">
 <h2>🎰 Lucky Spin Rewards</h2>
 
-<div id="wheelBox">
-<div id="wheel"></div>
-<div class="pointer">▲</div>
+<div class="wheel-box">
+  <div class="wheel" id="wheel"></div>
+  <div class="pointer">▲</div>
 </div>
 
-<div>💰 Coins: <span id="coins">0</span></div>
-<div id="value">≈ 0৳ | $0.00</div>
+<div>
+💰 Coins: <b id="coins">0</b><br>
+<span id="convert">≈ 0৳ | $0.00</span>
+</div>
+
 <div id="status">Ads ready</div>
 
-<button id="adBtn" class="btn">🎁 Watch Ad & Spin</button>
-
-<button class="btn"
-onclick="window.open('https://link.gigapub.tech/l/5kvfq30ta','_blank')">
-🔗 Gigapub Direct Link
-</button>
+<div class="card">
+<button class="btn" onclick="playAd('reward')">🎁 Reward Ad</button>
+<button class="btn" onclick="playAd('inter')">📺 Inter Ad</button>
+<button class="btn" onclick="playAd('native')">📰 Native Ad</button>
 </div>
 
 <div class="card">
 <h3>💳 Withdraw</h3>
-<select id="method" style="width:100%;padding:10px;border-radius:10px">
+<select id="method" style="width:90%;padding:10px;border-radius:8px">
 <option>bKash</option>
 <option>Nagad</option>
 <option>USDT</option>
 </select>
 <input id="wallet" placeholder="Wallet / Number"
-style="width:100%;padding:10px;border-radius:10px;margin-top:8px">
+style="width:90%;padding:10px;border-radius:8px;margin-top:6px">
 <button class="btn" onclick="withdraw()">Request Withdraw</button>
 </div>
 
 <div class="card">
+<h3>📜 Withdraw History</h3>
+<ul id="withdrawHistory" class="list"></ul>
+</div>
+
+<div class="card">
 <h3>🏆 Top Players</h3>
-<ul id="leader" style="list-style:none;padding:0"></ul>
+<ul id="leaderboard" class="list"></ul>
 </div>
 
 <div class="card">
 👥 Online Users: <span id="online">0</span>
 </div>
 
-<div class="popup" id="popup"></div>
-
 <div id="overlay">
 <h2>Ad is playing...</h2>
 <div id="timer">15</div>
 </div>
 
-<!-- ✅ ONLY REQUIRED Gigapub SDK -->
+<!-- 🔊 Sounds -->
+<audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-slot-machine-spin-1930.mp3"></audio>
+<audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-win-2025.mp3"></audio>
+
+<!-- ✅ Gigapub SDK -->
 <script src="https://ad.gigapub.tech/script?id=5619"></script>
 
 <script>
 let coins=0,locked=false;
 const wheel=document.getElementById("wheel");
-const btn=document.getElementById("adBtn");
 const status=document.getElementById("status");
 
-function spin(){
- wheel.classList.add("spin");
- setTimeout(()=>wheel.classList.remove("spin"),2000);
+function spinWheel(){
+ const deg=360*5 + Math.floor(Math.random()*360);
+ wheel.style.transform=`rotate(${deg}deg)`;
+ document.getElementById("spinSound").play();
 }
 
-function coinValue(){
- document.getElementById("value").innerText=
- `≈ ${(coins/1000*100).toFixed(0)}৳ | $${(coins/1200).toFixed(2)}`;
+function convert(){
+ const taka=(coins/1000)*100;
+ const usd=(coins/1200);
+ document.getElementById("convert").innerText=
+ `≈ ${taka.toFixed(0)}৳ | $${usd.toFixed(2)}`;
 }
 
 function overlay(sec,done){
@@ -112,66 +132,58 @@ function overlay(sec,done){
  },1000);
 }
 
-btn.onclick=()=>{
- if(!window.showGiga){
-   alert("Gigapub SDK load হয়নি");
-   return;
- }
+function playAd(type){
+ if(!window.showGiga){alert("Gigapub SDK load হয়নি");return;}
  if(locked) return;
 
- locked=true; btn.disabled=true;
- status.innerText="Ads আসছে ⏳";
- spin();
+ locked=true;
+ status.innerText=`${type.toUpperCase()} Ad আসছে ⏳`;
+ spinWheel();
 
  overlay(15,()=>{
    coins+=10;
    document.getElementById("coins").innerText=coins;
-   coinValue();
+   convert();
    status.innerText="Ads শেষ ✅";
-   locked=false; btn.disabled=false;
+   document.getElementById("winSound").play();
+   locked=false;
  });
 
- window.showGiga()
- .then(()=>console.log("Ad completed"))
- .catch(()=>{
+ window.showGiga().catch(()=>{
    alert("Ad failed");
-   locked=false; btn.disabled=false;
+   locked=false;
  });
-};
+}
 
-// fake leaderboard
+// Withdraw (fake)
+function withdraw(){
+ if(coins<1000){alert("Minimum 1000 coins required");return;}
+ const method=document.getElementById("method").value;
+ const amount=((coins/1000)*100).toFixed(0)+"৳";
+ const li=document.createElement("li");
+ li.innerText=`${method} | ${amount} | Pending`;
+ document.getElementById("withdrawHistory").prepend(li);
+ alert("Withdraw request submitted ✅");
+}
+
+// Fake leaderboard
 const names=["Rafi","Hasan","Siam","Arif","Fahim","Nayeem"];
-function leader(){
- const ul=document.getElementById("leader"); ul.innerHTML="";
+function updateLeaderboard(){
+ const ul=document.getElementById("leaderboard"); ul.innerHTML="";
  names.sort(()=>0.5-Math.random()).slice(0,4).forEach(n=>{
    const li=document.createElement("li");
    li.innerText=`${n} – ${Math.floor(Math.random()*5000)+500} coins`;
    ul.appendChild(li);
  });
 }
-setInterval(leader,4000); leader();
+setInterval(updateLeaderboard,4000); updateLeaderboard();
 
-// fake popup
-function popup(){
- const p=document.getElementById("popup");
- p.innerText=`🎉 ${names[Math.floor(Math.random()*names.length)]} won ${Math.floor(Math.random()*400)+100} coins`;
- p.style.display="block";
- setTimeout(()=>p.style.display="none",3000);
-}
-setInterval(popup,12000);
-
-// online users
+// Fake online users
 setInterval(()=>{
  document.getElementById("online").innerText=
  Math.floor(Math.random()*500)+50;
 },3000);
-
-// withdraw
-function withdraw(){
- if(coins<1000){alert("Minimum 1000 coins required");return;}
- alert("Withdraw request submitted ✅");
-}
 </script>
 
 </body>
-  </html>
+             </html>
