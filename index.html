@@ -3,8 +3,8 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Gigapub SDK -->
-<script src="https://ad.gigapub.tech/sdk.js"></script>
+<!-- Gigapub SDK with App ID 5619 -->
+<script src="https://ad.gigapub.tech/script?id=5619"></script>
 
 <style>
 body{margin:0;font-family:sans-serif;text-align:center;transition:0.5s}
@@ -147,7 +147,7 @@ function playAd(type){
  adStatus.innerText="Ads আসছে ⏳";
 
 try{
-  Gigapub.SDK.showAd({
+  Gigapub.showAd({
     publisher_id:5619,
     ad_type:type,
     onLoaded:()=>{adStatus.innerText="Ads loaded ✅";},
@@ -171,4 +171,4 @@ try{
 }
 </script>
 </body>
-  </html>
+                 </html>
